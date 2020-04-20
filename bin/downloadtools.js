@@ -27,6 +27,11 @@ program
       }
       await bulk.execute().promise;
       console.log('FINISHED');
+      for (const item of bulk.data) {
+        if (item.error) {
+          console.error('ERROR:', item.url, item.error.message);
+        }
+      }
       process.exit();
     } else {
       let data = [];
@@ -54,6 +59,11 @@ program
       }
       await bulk.execute().promise;
       console.log('FINISHED');
+      for (const item of bulk.data) {
+        if (item.error) {
+          console.error('ERROR:', item.url, item.error.message);
+        }
+      }
       process.exit();
     }
   }).parse(process.argv);

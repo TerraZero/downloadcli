@@ -5,6 +5,7 @@
  * @property {string} output
  * @property {boolean} finished
  * @property {string} file
+ * @property {Error} error
  */
 
 const Path = require('path');
@@ -114,9 +115,17 @@ module.exports = class BulkDownload {
     const stream = this.downloader.create(data.url);
 
     if (data.output === null || data.output === undefined) {
-      const fullinfo = await stream.getFullInfo();
+      try {
+        const fullinfo = await stream.getFullInfo();
 
-      data.output = fullinfo._filename;
+        data.output = fullinfo._filename;
+      } catch (e) {
+        data.error = e;
+        data.finished = true;
+        this.bars[0].increment();
+        this.next(id);
+        return;
+      }
     }
     data.file = this.getFile(data);
     data.finished = false;
