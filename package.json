@@ -1,0 +1,21 @@
+{
+  "name": "downloadtools",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "bin": {
+    "downloadtools": "./bin/downloadtools.js"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "TerraZero",
+  "license": "ISC",
+  "dependencies": {
+    "@ffmpeg-installer/ffmpeg": "^1.0.20",
+    "cli-progress": "^3.7.0",
+    "commander": "^5.0.0",
+    "fluent-ffmpeg": "^2.1.2",
+    "youtube-dl": "^3.0.2"
+  }
+}
