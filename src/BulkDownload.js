@@ -8,6 +8,7 @@
  */
 
 const Path = require('path');
+const FS = require('fs');
 const CliProgress = require('cli-progress');
 
 module.exports = class BulkDownload {
@@ -119,6 +120,13 @@ module.exports = class BulkDownload {
     }
     data.file = this.getFile(data);
     data.finished = false;
+
+    if (FS.existsSync(data.file)) {
+      data.finished = true;
+      this.bars[0].increment();
+      this.next(id);
+      return;
+    }
 
     stream.download();
     if (data.convert) {
