@@ -30,6 +30,7 @@ module.exports = class BulkDownload {
     this._cwd = process.cwd();
 
     this._promise = null;
+    this._total = 0;
   }
 
   /**
@@ -82,20 +83,64 @@ module.exports = class BulkDownload {
     return this;
   }
 
+  getFormatter(options, params, payload) {
+    const overview = (payload.type === 'overview');
+    let bar = options.barCompleteString.substr(0, Math.round(params.progress * options.barsize));
+    bar += options.barIncompleteString.substr(bar.length);
+    const parts = [];
+    if (overview) {
+      parts.push('Download:');
+    } else {
+      parts.push(this.formatFile(payload.title));
+    }
+    parts.push('[' + bar + ']');
+    parts.push(this.pad(Math.round(params.progress * 100) || '0', 3, ' ', true) + '%');
+    parts.push('|');
+    if (overview) {
+      parts.push(params.value + ' / ' + params.total + ' Files');
+      parts.push('| ' + this.formatFileSize(payload.totalSize));
+    } else {
+      parts.push(this.formatFileSize(params.value) + ' / ' + this.formatFileSize(params.total));
+    }
+    return parts.join(' ');
+  }
+
+  formatFile(file) {
+    if (!Path.isAbsolute(file) || file.length <= 25) return this.pad(Path.basename(file), 25);
+    file = Path.basename(file);
+    const ext = Path.extname(file);
+
+    return file.substring(0, 24 - ext.length) + '…' + ext;
+  }
+
+  formatFileSize(bytes) {
+    var thresh = 1000;
+    if (Math.abs(bytes) < thresh) {
+      return this.pad(bytes + ' B', 8, ' ', true);
+    }
+    var units = ['kB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+    var u = -1;
+    do {
+      bytes /= thresh;
+      ++u;
+    } while (Math.abs(bytes) >= thresh && u < units.length - 1);
+    return this.pad(bytes.toFixed(1) + ' ' + units[u], 8, ' ', true);
+  }
+
   createLogging() {
     this._logger = new CliProgress.MultiBar({
-      format: '{title} [{bar}] {percentage}% | {value} KB / {total} KB',
+      format: this.getFormatter.bind(this),
     });
     this._bars = [];
     for (let i = 0; i < this._bulk + 1; i++) {
       this.bars.push(this.logger.create(1, 0, {
-        title: this.getTitle('Waiting ...'),
+        title: 'Waiting ...',
       }));
     }
-    const copy = JSON.parse(JSON.stringify(this.bars[0].options));
-    copy.format = 'Download: [{bar}] {percentage}% | {value} / {total} Files';
-    this.bars[0].options = copy;
-    this.bars[0].start(this.data.length, 0);
+    this.bars[0].start(this.data.length, 0, {
+      type: 'overview',
+      totalSize: 0,
+    });
   }
 
   execute() {
@@ -168,23 +213,26 @@ module.exports = class BulkDownload {
   }
 
   onStart() {
-    this.that.bars[this.id].start(Math.ceil(this.stream.getSize() / 1024), 0, {
-      title: this.that.getTitle(Path.basename(this.data.output)),
+    this.that.bars[this.id].start(this.stream.getSize(), 0, {
+      title: this.data.file,
     });
   }
 
   onUpdate(buffer) {
-    this.that.bars[this.id].increment(Math.ceil(buffer.length / 1024));
+    this.that._total += buffer.length;
+    this.that.bars[0].update(null, { totalSize: this.that._total });
+    this.that.bars[this.id].increment(buffer.length);
   }
 
-  /**
-   * @param {string} title
-   */
-  getTitle(title) {
-    if (title.length > 15) {
-      return title.substring(0, 15);
+  pad(string, length, padding = ' ', left = false) {
+    string = string && string + '' || '';
+    if (string.length > length) return string.substring(0, length);
+    const pad = padding.repeat(length - string.length);
+    if (left) {
+      return pad + string;
+    } else {
+      return string + pad;
     }
-    return title + ' '.repeat(15 - title.length);
   }
 
   getFile(data) {
