@@ -103,8 +103,9 @@ module.exports = class BulkDownload {
   }
 
   formatFile(file) {
-    if (!Path.isAbsolute(file) || file.length <= 25) return this.pad(Path.basename(file), 25);
+    const absolute = Path.isAbsolute(file);
     file = Path.basename(file);
+    if (!absolute || file.length <= 25) return this.pad(file, 25);
     const ext = Path.extname(file);
 
     return file.substring(0, 24 - ext.length) + '…' + ext;
@@ -215,7 +216,8 @@ module.exports = class BulkDownload {
 
   onUpdate(buffer) {
     this.that._total += buffer.length;
-    this.that.bars[0].update(null, { totalSize: this.that._total });
+    console.log()
+    this.that.bars[0].update({ totalSize: this.that._total });
     this.that.bars[this.id].increment(buffer.length);
   }
 
