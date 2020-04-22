@@ -132,6 +132,7 @@ module.exports = class DownloadStream {
     this._convert = this.downloader.converter(this.stream);
 
     this._convert.on('end', this.onFinish.bind(this));
+    this._convert.on('error', () => { });
     this._convert.save(this.output);
     return this;
   }
