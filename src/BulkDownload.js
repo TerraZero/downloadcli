@@ -216,7 +216,6 @@ module.exports = class BulkDownload {
 
   onUpdate(buffer) {
     this.that._total += buffer.length;
-    console.log()
     this.that.bars[0].update({ totalSize: this.that._total });
     this.that.bars[this.id].increment(buffer.length);
   }
