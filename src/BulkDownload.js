@@ -29,7 +29,11 @@ module.exports = class BulkDownload {
     this._index = null;
     this._cwd = process.cwd();
 
-    this._promise = null;
+    this._promise = {};
+    this._promise.promise = new Promise((resolve, reject) => {
+      this._promise.resolve = resolve;
+      this._promise.reject = reject;
+    });
     this._total = 0;
   }
 
@@ -65,13 +69,6 @@ module.exports = class BulkDownload {
    * @returns {Promise<BulkDownload>}
    */
   get promise() {
-    if (this._promise === null) {
-      this._promise = {};
-      this._promise.promise = new Promise((resolve, reject) => {
-        this._promise.resolve = resolve;
-        this._promise.reject = reject;
-      });
-    }
     return this._promise.promise;
   }
 
@@ -202,9 +199,7 @@ module.exports = class BulkDownload {
     for (const item of this.data) {
       if (!item.finished) return this;
     }
-    if (this._promise) {
-      this._promise.resolve(this);
-    }
+    this._promise.resolve(this);
     for (const bar of this.bars) {
       bar.stop();
     }
