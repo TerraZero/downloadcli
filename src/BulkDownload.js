@@ -11,6 +11,7 @@
 const Path = require('path');
 const FS = require('fs');
 const CliProgress = require('cli-progress');
+const CLILine = require('inputtools/src/logging/CLILine');
 
 module.exports = class BulkDownload {
 
@@ -35,6 +36,10 @@ module.exports = class BulkDownload {
       this._promise.reject = reject;
     });
     this._total = 0;
+    this._formatter = {
+      overview: new CLILine('Progress: {bar} {percentage} | {from} / {total} Files | {bytes}'),
+      download: new CLILine('{title<3}{ext} {bar} {percentage} | {from} / {total}'),
+    };
   }
 
   /**
@@ -81,34 +86,25 @@ module.exports = class BulkDownload {
   }
 
   getFormatter(options, params, payload) {
-    const overview = (payload.type === 'overview');
-    let bar = options.barCompleteString.substr(0, Math.round(params.progress * options.barsize));
-    bar += options.barIncompleteString.substr(bar.length);
-    const parts = [];
-    if (overview) {
-      parts.push('Download:');
-    } else {
-      parts.push(this.formatFile(payload.title));
-    }
-    parts.push('[' + bar + ']');
-    parts.push(this.pad(Math.round(params.progress * 100) || '0', 3, ' ', true) + '%');
-    parts.push('|');
-    if (overview) {
-      parts.push(params.value + ' / ' + params.total + ' Files');
-      parts.push('| ' + this.formatFileSize(payload.totalSize));
-    } else {
-      parts.push(this.formatFileSize(params.value) + ' / ' + this.formatFileSize(params.total));
-    }
-    return parts.join(' ');
-  }
+    const formatter = this._formatter[payload.type || 'download'];
+    const placeholders = {};
 
-  formatFile(file) {
-    const absolute = Path.isAbsolute(file);
-    file = Path.basename(file);
-    if (!absolute || file.length <= 25) return this.pad(file, 25);
-    const ext = Path.extname(file);
+    placeholders.bar = '[' + options.barCompleteString.substr(0, Math.round(params.progress * options.barsize));
+    placeholders.bar += options.barIncompleteString.substr(placeholders.bar.length) + ']';
+    if (payload.title) {
+      placeholders.ext = Path.extname(payload.title);
+      placeholders.title = Path.basename(payload.title).substr(0, Path.basename(payload.title).length - placeholders.ext.length);
+    }
+    placeholders.percentage = this.pad(Math.round(params.progress * 100) || '0', 3, ' ', true) + '%';
+    placeholders.from = params.value;
+    placeholders.total = params.total;
+    placeholders.bytes = this.formatFileSize(payload.totalSize);
 
-    return file.substring(0, 24 - ext.length) + '…' + ext;
+    if (payload.type !== 'overview') {
+      placeholders.from = this.formatFileSize(placeholders.from);
+      placeholders.total = this.formatFileSize(placeholders.total);
+    }
+    return formatter.format(placeholders);
   }
 
   formatFileSize(bytes) {
@@ -132,7 +128,7 @@ module.exports = class BulkDownload {
     this._bars = [];
     for (let i = 0; i < this._bulk + 1; i++) {
       this.bars.push(this.logger.create(1, 0, {
-        title: 'Waiting ...',
+        title: 'Waiting …',
       }));
     }
     this.bars[0].start(this.data.length, 0, {
@@ -216,7 +212,7 @@ module.exports = class BulkDownload {
 
   onUpdate(buffer) {
     this.that._total += buffer.length;
-    this.that.bars[0].update({ totalSize: this.that._total });
+    this.that.bars[0].update(this.that.bars[0].value, { totalSize: this.that._total });
     this.that.bars[this.id].increment(buffer.length);
   }
 
