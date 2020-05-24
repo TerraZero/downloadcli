@@ -1,6 +1,11 @@
 #!/usr/bin/env node
 
 const { program } = require('commander');
+
+
+const BulkDownload = require('downloadutils/src/BulkDownload');
+const DownloadLogger = require('../src/DownloadLogger');
+
 const Downloader = require('../src/Downloader');
 const FS = require('fs');
 const Path = require('path');
@@ -53,11 +58,12 @@ program
         }
       }
 
-      const bulk = manager.createMulti(data, parseInt(options.bulk));
-      if (options.cwd) {
-        bulk.setCWD(options.cwd);
-      }
-      await bulk.execute().promise;
+      const bulk = new BulkDownload(data, [], {}, Number.parseInt(options.bulk));
+
+      if (options.cwd) bulk.setCWD(options.cwd);
+
+      new DownloadLogger(bulk);
+      await bulk.download().promise;
       console.log('FINISHED');
       for (const item of bulk.data) {
         if (item.error) {

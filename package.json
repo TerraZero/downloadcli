@@ -18,6 +18,7 @@
     "downloadutils": "git+https://github.com/TerraZero/downloadutils.git",
     "fluent-ffmpeg": "^2.1.2",
     "inputtools": "git+https://github.com/TerraZero/inputtools.git",
+    "utils": "git+https://github.com/TerraZero/utils.git",
     "youtube-dl": "^3.0.2"
   }
 }
