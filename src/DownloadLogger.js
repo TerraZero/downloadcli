@@ -19,7 +19,7 @@ module.exports = class DownloadLogger {
 
     this._cliline = {
       overview: new CLILine('Progress: {bar} {percentage} | {from} / {total} Files | {bytes}'),
-      download: new CLILine('{title<3}{ext} {bar} {percentage} | {from} / {total}'),
+      download: new CLILine('{bar} {percentage} | {from} / {total} | {title<3}{ext}'),
     };
 
     this._download.promise.then(this.onClose.bind(this));
@@ -54,13 +54,14 @@ module.exports = class DownloadLogger {
 
     this.download.events.on('next', this.onNext.bind(this));
     this.download.events.on('finish', this.onFinish.bind(this));
+    this.download.events.on('error', this.onError.bind(this));
   }
 
   format(options, params, payload) {
     const line = this._cliline[payload.type];
     const placeholders = {};
 
-    placeholders.bar = '[' + options.barCompleteString.substr(0, Math.round(params.progress * options.barsize));
+    placeholders.bar = '[' + options.barCompleteString.substr(0, Math.ceil(params.progress * options.barsize));
     placeholders.bar += options.barIncompleteString.substr(placeholders.bar.length) + ']';
     if (payload.title) {
       placeholders.ext = Path.extname(payload.title);
@@ -90,6 +91,14 @@ module.exports = class DownloadLogger {
    * @param {import('downloadutils/src/BulkDownload').T_DownloadItem} item
    */
   onFinish(item) {
+    this.bars[0].increment();
+    this.bars[item.bulkID + 1].stop();
+  }
+
+  /**
+   * @param {import('downloadutils/src/BulkDownload').T_DownloadItem} item
+   */
+  onError({ item }) {
     this.bars[0].increment();
     this.bars[item.bulkID + 1].stop();
   }
