@@ -1,10 +1,10 @@
 {
-  "name": "downloadtools",
+  "name": "downloadcli",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "bin": {
-    "downloadtools": "./bin/downloadtools.js"
+    "downloadcli": "./bin/downloadcli.js"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
