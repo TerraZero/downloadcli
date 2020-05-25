@@ -2,14 +2,10 @@
 
 const { program } = require('commander');
 
-
+const Logger = require('clitools/src/logging/Logger');
 const BulkDownload = require('downloadutils/src/BulkDownload');
+const DownloadManager = require('../src/DownloadManager');
 const DownloadLogger = require('../src/DownloadLogger');
-
-const Downloader = require('../src/Downloader');
-const FS = require('fs');
-const Path = require('path');
-const manager = new Downloader();
 
 program
   .arguments('[url] [target]')
@@ -19,43 +15,39 @@ program
   .option('-c|--convert [format]')
   .option('-b|--bulk [bulk]', '', 5)
   .action(async (url = null, target = null, options) => {
+    const logger = new Logger('download-cli');
     if (url) {
-      const bulk = manager.createMulti([
-        {
-          url: url,
-          output: target,
-          convert: options.convert || false,
-        }
-      ], 1);
+      const bulk = new BulkDownload([{
+        url: url,
+        output: target,
+        convert: options.convert || false,
+      }]);
+
+      bulk.setBulk(1);
       if (options.cwd) {
         bulk.setCWD(options.cwd);
       }
-      await bulk.execute().promise;
-      console.log('FINISHED');
-      for (const item of bulk.data) {
-        if (item.error) {
-          console.error('ERROR:', item.url, item.error.message);
+      await bulk.download().promise;
+      const errors = DownloadManager.extractErrors(bulk);
+
+      if (errors.length) {
+        logger.failed('FINISHED WITH {length} ERRORS', { length: errors.length });
+        for (const item of errors) {
+          logger.error('ERROR:', item.url, item.download.error.message);
         }
+      } else {
+        logger.success('FINISHED');
       }
       process.exit();
     } else {
       let data = [];
       if (options.json) {
-        if (Path.isAbsolute(options.json)) {
-          data = require(options.json);
-        } else {
-          data = require(Path.join(process.cwd(), options.json));
-        }
+        data = DownloadManager.readFromJSON(options.json);
       } else if (options.list) {
-        const list = FS.readFileSync(options.list);
-
-        for (const line of list.toString().split("\n")) {
-          if (line.trim().length === 0) continue;
-          data.push({
-            url: line,
-            convert: options.convert || false,
-          });
-        }
+        data = DownloadManager.readFromFile(options.list);
+      } else {
+        logger.failed('No data givin.');
+        process.exit();
       }
 
       const bulk = new BulkDownload(data, [], {}, Number.parseInt(options.bulk));
@@ -64,11 +56,17 @@ program
 
       new DownloadLogger(bulk);
       await bulk.download().promise;
-      console.log('FINISHED');
-      for (const item of bulk.data) {
-        if (item.error) {
-          console.error('ERROR:', item.url, item.error.message);
+      const errors = DownloadManager.extractErrors(bulk);
+
+      const errors = DownloadManager.extractErrors(bulk);
+
+      if (errors.length) {
+        logger.failed('FINISHED WITH {length} ERRORS', { length: errors.length });
+        for (const item of errors) {
+          logger.error('ERROR:', item.url, item.download.error.message);
         }
+      } else {
+        logger.success('FINISHED');
       }
       process.exit();
     }

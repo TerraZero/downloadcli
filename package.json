@@ -14,10 +14,10 @@
   "dependencies": {
     "@ffmpeg-installer/ffmpeg": "^1.0.20",
     "cli-progress": "^3.7.0",
+    "clitools": "git+https://github.com/TerraZero/clitools.git",
     "commander": "^5.0.0",
     "downloadutils": "git+https://github.com/TerraZero/downloadutils.git",
     "fluent-ffmpeg": "^2.1.2",
-    "inputtools": "git+https://github.com/TerraZero/inputtools.git",
     "utils": "git+https://github.com/TerraZero/utils.git",
     "youtube-dl": "^3.0.2"
   }

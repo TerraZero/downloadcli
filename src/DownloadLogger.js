@@ -3,7 +3,7 @@ const CliProgress = require('cli-progress');
 
 const Format = require('utils/src/Format');
 const BulkDownload = require('downloadutils/src/BulkDownload');
-const CLILine = require('inputtools/src/logging/CLILine');
+const CLILine = require('clitools/src/logging/CLILine');
 
 module.exports = class DownloadLogger {
 
