@@ -13,6 +13,7 @@ program
   .option('-l|--list [file]', 'Path to a file of url`s. (Only useable without argument "url")')
   .option('-o|--cwd [path]', 'Path to the cwd for the download. (Can be overwritten from single download item)')
   .option('-c|--convert [format]', 'The convert extname. (Only useable with argument "url")')
+  .option('--overwrite', 'If the files should be overwritten by download.')
   .option('-b|--bulk [bulk]', 'The number of processes.', 5)
   .action(async function (url = null, target = null, options) {
     const logger = new Logger('download-cli');
@@ -24,9 +25,8 @@ program
       }]);
 
       bulk.setBulk(1);
-      if (options.cwd) {
-        bulk.setCWD(options.cwd);
-      }
+      if (options.cwd) bulk.setCWD(options.cwd);
+      if (options.overwrite) bulk.setOption('overwrite', true);
 
       new DownloadLogger(bulk);
       await bulk.download().promise;
@@ -35,6 +35,7 @@ program
       if (errors.length) {
         logger.failed('FINISHED [total] WITH [length] ERRORS', { total: bulk.data.length, length: errors.length });
         for (const item of errors) {
+          console.log(item.download.error);
           logger.error(item.url + ' ' + item.download.error.stderr);
         }
       } else {
@@ -52,9 +53,11 @@ program
         this.help();
       }
 
-      const bulk = new BulkDownload(data, [], {}, Number.parseInt(options.bulk));
+      const bulk = new BulkDownload(data);
 
+      bulk.setBulk(Number.parseInt(options.bulk));
       if (options.cwd) bulk.setCWD(options.cwd);
+      if (options.overwrite) bulk.setOption('overwrite', true);
 
       new DownloadLogger(bulk);
       await bulk.download().promise;
