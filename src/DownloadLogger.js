@@ -83,6 +83,7 @@ module.exports = class DownloadLogger {
    * @param {import('downloadutils/src/BulkDownload').T_DownloadItem} item
    */
   onNext(item) {
+    if (!item.download._downloadstream) return;
     item.download._downloadstream.on('info', this.onInfo.bind(this, item));
     item.download._downloadstream.on('data', (buffer) => this.onData(item, buffer));
   }
