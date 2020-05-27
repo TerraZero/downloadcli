@@ -61,8 +61,8 @@ module.exports = class DownloadLogger {
     const line = this._cliline[payload.type];
     const placeholders = {};
 
-    placeholders.bar = '[' + options.barCompleteString.substr(0, Math.ceil(params.progress * options.barsize));
-    placeholders.bar += options.barIncompleteString.substr(placeholders.bar.length) + ']';
+    placeholders.bar = '[' + options.barCompleteString.substr(0, Math.floor(params.progress * options.barsize));
+    placeholders.bar += options.barIncompleteString.substr(Math.floor(params.progress * options.barsize)) + ']';
     if (payload.title) {
       placeholders.ext = Path.extname(payload.title);
       placeholders.title = Path.basename(payload.title).substr(0, Path.basename(payload.title).length - placeholders.ext.length);
